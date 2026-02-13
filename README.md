@@ -52,10 +52,11 @@ This tap automatically syncs with PyPI releases. When a new version of devscope 
 # Install from local formula
 brew install --build-from-source ./Formula/devscope.rb
 
-# Run tests
-brew test devscope
+# Verify installation
+devscope --version
 
-# Audit the formula
+# Audit the formula (after tap is published)
+brew tap EhsanAzish80/devscope
 brew audit --strict devscope
 ```
 

@@ -36,8 +36,15 @@ brew test devscope
 Ensure the formula meets Homebrew standards:
 
 ```bash
-brew audit --strict --online Formula/devscope.rb
+# After the tap is published, audit with:
+brew tap EhsanAzish80/devscope
+brew audit --strict --online devscope
+
+# For local file testing (may show warnings):
+brew audit --strict Formula/devscope.rb
 ```
+
+**Note**: `brew audit` with file paths is deprecated in newer Homebrew versions. Full auditing requires the formula to be in a tap.
 
 ### Style Checks
 
@@ -56,9 +63,11 @@ When a new version of devscope is released:
    curl -s https://pypi.org/pypi/devscope/json | python3 -c "import sys, json; data = json.load(sys.stdin); sdist = [u for u in data['urls'] if u['packagetype'] == 'sdist'][0]; print(f\"Version: {data['info']['version']}\"); print(f\"URL: {sdist['url']}\"); print(f\"SHA256: {sdist['digests']['sha256']}\")"
    ```
 
-2. Update `Formula/devscope.rb`:
-   - Change the `url` to the new tarball URL
-   - Update the `sha256` hash
+2. Update `Formula/devscop || true
+   brew install --build-from-source ./Formula/devscope.rb
+   
+   # Verify the version
+   devscope --version56` hash
    - Update resource versions if dependencies changed
 
 3. Test the update:

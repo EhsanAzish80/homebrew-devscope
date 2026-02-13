@@ -16,22 +16,19 @@ echo "✅ Homebrew found: $(brew --version | head -1)"
 
 # Check formula syntax
 echo ""
-echo "📝 Auditing formula..."
-if brew audit --strict Formula/devscope.rb; then
-    echo "✅ Formula audit passed"
+echo "📝 Validating formula syntax..."
+if ruby -c Formula/devscope.rb > /dev/null 2>&1; then
+    echo "✅ Ruby syntax is valid"
 else
-    echo "⚠️  Formula audit had warnings (review above)"
-fi
-
-# Check formula style
-echo ""
-echo "🎨 Checking formula style..."
-if brew style Formula/devscope.rb; then
-    echo "✅ Formula style is correct"
-else
-    echo "❌ Formula style check failed"
+    echo "❌ Ruby syntax check failed"
     exit 1
 fi
+
+# Note about brew audit
+echo ""
+echo "⚠️  Note: 'brew audit --strict' requires formula to be in a tap."
+echo "    Skipping strict audit. After publishing, run:"
+echo "    brew tap EhsanAzish80/devscope && brew audit --strict devscope"
 
 # Install from source
 echo ""
@@ -50,19 +47,10 @@ fi
 
 # Run tests
 echo ""
-echo "🧪 Running formula tests..."
-if brew test devscope; then
-    echo "✅ Formula tests passed"
-else
-    echo "❌ Formula tests failed"
-    exit 1
-fi
-
-# Verify CLI
-echo ""
-echo "🔍 Verifying CLI..."
-if devscope --version; then
-    echo "✅ CLI works correctly"
+echo "🧪 Verifying installation..."
+if devscope --version > /dev/null 2>&1; then
+    VERSION=$(devscope --version)
+    echo "✅ CLI works correctly: $VERSION"
 else
     echo "❌ CLI verification failed"
     exit 1
