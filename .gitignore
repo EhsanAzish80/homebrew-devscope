@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+._*
+
+# Homebrew
+*.bottle.*
+*.bottle.*.tar.gz
+
+# Temporary files
+*.tmp
+*.log
+*~
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test artifacts
+test-results/

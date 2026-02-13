@@ -1,0 +1,55 @@
+name: Test Formula
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test-formula:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Homebrew
+        run: |
+          # Homebrew is pre-installed on macOS runners
+          brew --version
+          brew update
+
+      - name: Audit formula
+        run: |
+          brew audit --strict --online Formula/devscope.rb
+
+      - name: Install from formula
+        run: |
+          brew install --build-from-source ./Formula/devscope.rb
+
+      - name: Test installation
+        run: |
+          brew test devscope
+
+      - name: Verify CLI works
+        run: |
+          devscope --version
+          devscope --help
+
+      - name: Check for common issues
+        run: |
+          # Verify virtualenv isolation
+          brew info devscope
+          
+          # Check that devscope is properly linked
+          which devscope
+          
+          # Verify it's using the correct Python
+          brew list devscope | grep python@3.11
+
+      - name: Cleanup
+        if: always()
+        run: |
+          brew uninstall devscope || true

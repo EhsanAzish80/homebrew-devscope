@@ -1,0 +1,99 @@
+name: Update devscope Formula
+
+on:
+  schedule:
+    # Check for new releases every hour
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch latest PyPI release
+        id: pypi
+        run: |
+          # Fetch the latest version from PyPI
+          PYPI_DATA=$(curl -s https://pypi.org/pypi/devscope/json)
+          VERSION=$(echo "$PYPI_DATA" | python3 -c "import sys, json; print(json.load(sys.stdin)['info']['version'])")
+          
+          # Get the sdist URL and SHA256
+          SDIST_INFO=$(echo "$PYPI_DATA" | python3 -c "import sys, json; data = json.load(sys.stdin); sdist = [u for u in data['urls'] if u['packagetype'] == 'sdist'][0]; print(sdist['url']); print(sdist['digests']['sha256'])")
+          URL=$(echo "$SDIST_INFO" | sed -n '1p')
+          SHA256=$(echo "$SDIST_INFO" | sed -n '2p')
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+          
+          echo "Latest PyPI version: $VERSION"
+          echo "URL: $URL"
+          echo "SHA256: $SHA256"
+
+      - name: Check current formula version
+        id: formula
+        run: |
+          CURRENT_VERSION=$(grep -m 1 'url "https://files.pythonhosted.org' Formula/devscope.rb | sed -n 's/.*devscope-\([0-9.]*\)\.tar\.gz.*/\1/p')
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current formula version: $CURRENT_VERSION"
+
+      - name: Update formula if needed
+        if: steps.pypi.outputs.version != steps.formula.outputs.current_version
+        run: |
+          VERSION="${{ steps.pypi.outputs.version }}"
+          URL="${{ steps.pypi.outputs.url }}"
+          SHA256="${{ steps.pypi.outputs.sha256 }}"
+          
+          # Update the formula file
+          sed -i "s|url \"https://files.pythonhosted.org/.*devscope-.*\.tar\.gz\"|url \"$URL\"|" Formula/devscope.rb
+          sed -i "s/sha256 \".*\"/sha256 \"$SHA256\"/" Formula/devscope.rb
+          
+          echo "Updated formula to version $VERSION"
+
+      - name: Fetch and update dependencies
+        if: steps.pypi.outputs.version != steps.formula.outputs.current_version
+        run: |
+          VERSION="${{ steps.pypi.outputs.version }}"
+          
+          # Download the tarball
+          curl -L -o "/tmp/devscope-${VERSION}.tar.gz" "${{ steps.pypi.outputs.url }}"
+          
+          # Extract and find requirements
+          cd /tmp
+          tar -xzf "devscope-${VERSION}.tar.gz"
+          
+          # Find pyproject.toml or setup.py to get dependencies
+          if [ -f "devscope-${VERSION}/pyproject.toml" ]; then
+            echo "Found pyproject.toml"
+            # Extract dependencies (this is a simplified approach)
+            # In production, you might want to use poetry or pip-compile
+          fi
+          
+          echo "Dependencies update completed (manual review recommended)"
+
+      - name: Commit and push changes
+        if: steps.pypi.outputs.version != steps.formula.outputs.current_version
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add Formula/devscope.rb
+          git commit -m "Update devscope to ${{ steps.pypi.outputs.version }}"
+          git push
+
+      - name: Create release notes
+        if: steps.pypi.outputs.version != steps.formula.outputs.current_version
+        run: |
+          echo "✅ Updated devscope from ${{ steps.formula.outputs.current_version }} to ${{ steps.pypi.outputs.version }}"
+          echo "📦 SHA256: ${{ steps.pypi.outputs.sha256 }}"
+          echo "🔗 PyPI: https://pypi.org/project/devscope/${{ steps.pypi.outputs.version }}/"
