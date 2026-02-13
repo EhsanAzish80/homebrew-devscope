@@ -44,7 +44,22 @@ jobs:
           
           # Verify tap is recognized
           brew tap | grep ehsanazish80/devscope || echo "Note: Tap may not show up until first use"
-          Now we can use brew test since formula is in a tap
+          
+          echo "✅ Tap structure created"
+
+      - name: Install from formula
+        run: |
+          # Install from the tap we just created
+          brew install --build-from-source --verbose ehsanazish80/devscope/devscope
+
+      - name: Verify CLI works
+        run: |
+          devscope --version
+          devscope --help
+
+      - name: Run formula test block
+        run: |
+          # Now we can use brew test since formula is in a tap
           brew test ehsanazish80/devscope/devscope || {
             # If brew test fails, run manual verification
             OUTPUT=$(devscope --version)
@@ -67,27 +82,13 @@ jobs:
           
           # Check formula info
           brew info ehsanazish80/devscope/devscope
-          else
-            echo "❌ Version test failed"
-            exit 1
-          fi
-
-      - name: Check for common issues
-        run: |
-          # Check that devscope is properly linked
-          which devscope
-          
-          # Verify dependencies
-          brew deps ./Formula/devscope.rb
-          
-          # Check formula info
-          brew info ./Formula/devscope.rb
 
       - name: Verify Python environment
         run: |
           # Check Python version used
           PYTHON_PATH=$(brew --prefix python@3.11)/bin/python3.11
           echo "Python path: $PYTHON_PATH"
+          $PYTHON_PATH --version
           
       - name: Run audit
         run: |
@@ -103,5 +104,4 @@ jobs:
           brew uninstall devscope || true
           
           # Clean up the symlinked tap
-          brew untap ehsanazish80/ng formula path since it's not in a tap
-          brew uninstall devscope || true
+          brew untap ehsanazish80/devscope || true
