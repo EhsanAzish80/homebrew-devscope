@@ -19,10 +19,26 @@ Thank you for your interest in contributing to the devscope Homebrew tap!
 
 ### Local Installation
 
-Test your formula changes locally:
+Test your formula changes locally by creating a temporary tap:
 
 ```bash
-brew install --build-from-source ./Formula/devscope.rb
+# Create a local tap symlink
+REPO_PATH="$(pwd)"
+TAP_PATH="$(brew --repository)/Library/Taps/ehsanazish80/homebrew-devscope"
+mkdir -p "$(dirname "$TAP_PATH")"
+ln -s "$REPO_PATH" "$TAP_PATH"
+
+# With local tap created (see above)
+brew test ehsanazish80/devscope/devscope
+
+# Or manually
+devscope --version local tap
+brew install --build-from-source ehsanazish80/devscope/devscope
+```
+
+Or use the validation script:
+```bash
+./validate.sh
 ```
 
 ### Running Tests
@@ -36,20 +52,19 @@ brew test devscope
 Ensure the formula meets Homebrew standards:
 
 ```bash
-# After the tap is published, audit with:
+# With local tap created
+brew audit --strict ehsanazish80/devscope/devscope
+
+# After the tap is published
 brew tap EhsanAzish80/devscope
-brew audit --strict --online devscope
-
-# For local file testing (may show warnings):
-brew audit --strict Formula/devscope.rb
+brew audit --strict --online ehsanazish80/devscope/devscope
 ```
-
-**Note**: `brew audit` with file paths is deprecated in newer Homebrew versions. Full auditing requires the formula to be in a tap.
 
 ### Style Checks
 
 ```bash
-brew style Formula/devscope.rb
+# With local tap
+brew style ehsanazish80/devscope/devscope
 ```
 
 ## Updating the Formula

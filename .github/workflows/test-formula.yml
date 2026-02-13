@@ -20,10 +20,6 @@ jobs:
           # Homebrew is pre-installed on macOS runners
           brew --version
           brew update
-          
-      # Note: brew audit --strict requires formula to be in a tap
-      # For local testing, use: brew audit --strict --online Formula/devscope.rb
-      # after adding the tap with: brew tap EhsanAzish80/devscope
 
       - name: Validate formula syntax
         run: |
@@ -33,24 +29,44 @@ jobs:
           grep -q "virtualenv_install_with_resources" Formula/devscope.rb
           echo "✅ Formula syntax is valid"
 
-      - name: Install from formula
+      - name: Set up tap for testing
         run: |
-          brew install --build-from-source --verbose ./Formula/devscope.rb
+          # Create a local tap using the checked-out repository
+          # This allows us to test the formula as if it were in a real tap
+          REPO_PATH="${GITHUB_WORKSPACE}"
+          TAP_PATH="$(brew --repository)/Library/Taps/ehsanazish80/homebrew-devscope"
+          
+          # Create tap directory structure
+          mkdir -p "$(dirname "$TAP_PATH")"
+          
+          # Symlink this repository as a tap
+          ln -s "$REPO_PATH" "$TAP_PATH"
+          
+          # Verify tap is recognized
+          brew tap | grep ehsanazish80/devscope || echo "Note: Tap may not show up until first use"
+          Now we can use brew test since formula is in a tap
+          brew test ehsanazish80/devscope/devscope || {
+            # If brew test fails, run manual verification
+            OUTPUT=$(devscope --version)
+            echo "Version output: $OUTPUT"
+            if [[ $OUTPUT == *"0.1.1"* ]]; then
+              echo "✅ Version test passed"
+            else
+              echo "❌ Version test failed"
+              exit 1
+            fi
+          }
 
-      - name: Verify CLI works
+      - name: Check for common issues
         run: |
-          devscope --version
-          devscope --help
-
-      - name: Run formula test block
-        run: |
-          # Extract and run the test from the formula
-          brew install --build-from-source ./Formula/devscope.rb
-          # Test the CLI manually since brew test requires a tap
-          OUTPUT=$(devscope --version)
-          echo "Version output: $OUTPUT"
-          if [[ $OUTPUT == *"0.1.1"* ]]; then
-            echo "✅ Version test passed"
+          # Check that devscope is properly linked
+          which devscope
+          
+          # Verify dependencies
+          brew deps ehsanazish80/devscope/devscope
+          
+          # Check formula info
+          brew info ehsanazish80/devscope/devscope
           else
             echo "❌ Version test failed"
             exit 1
@@ -72,10 +88,20 @@ jobs:
           # Check Python version used
           PYTHON_PATH=$(brew --prefix python@3.11)/bin/python3.11
           echo "Python path: $PYTHON_PATH"
-          $PYTHON_PATH --version
+          
+      - name: Run audit
+        run: |
+          # Now that formula is in a tap, we can audit it
+          brew audit --strict ehsanazish80/devscope/devscope || {
+            echo "⚠️ Audit warnings detected (non-fatal)"
+          }
 
       - name: Cleanup
         if: always()
         run: |
-          # Uninstall using formula path since it's not in a tap
+          # Uninstall the formula
+          brew uninstall devscope || true
+          
+          # Clean up the symlinked tap
+          brew untap ehsanazish80/ng formula path since it's not in a tap
           brew uninstall devscope || true

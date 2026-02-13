@@ -49,15 +49,32 @@ This tap automatically syncs with PyPI releases. When a new version of devscope 
 ### Testing the Formula Locally
 
 ```bash
-# Install from local formula
-brew install --build-from-source ./Formula/devscope.rb
+# Create a local tap for testing
+REPO_PATH="$(pwd)"
+TAP_PATH="$(brew --repository)/Library/Taps/ehsanazish80/homebrew-devscope"
+mkdir -p "$(dirname "$TAP_PATH")"
+ln -s "$REPO_PATH" "$TAP_PATH"
+
+# Install from local tap
+brew install --build-from-source ehsanazish80/devscope/devscope
 
 # Verify installation
 devscope --version
 
-# Audit the formula (after tap is published)
-brew tap EhsanAzish80/devscope
-brew audit --strict devscope
+# Run tests
+brew test ehsanazish80/devscope/devscope
+
+# Audit the formula
+brew audit --strict ehsanazish80/devscope/devscope
+
+# Cleanup
+brew uninstall devscope
+brew untap ehsanazish80/devscope
+```
+
+Or use the validation script:
+```bash
+./validate.sh
 ```
 
 ### Formula Structure
