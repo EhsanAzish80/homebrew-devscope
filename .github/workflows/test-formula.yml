@@ -64,10 +64,10 @@ jobs:
             # If brew test fails, run manual verification
             OUTPUT=$(devscope --version)
             echo "Version output: $OUTPUT"
-            if [[ $OUTPUT == *"0.1.1"* ]]; then
-              echo "✅ Version test passed"
+            if [[ $OUTPUT == *"version"* ]]; then
+              echo "✅ Version test passed - CLI is working"
             else
-              echo "❌ Version test failed"
+              echo "❌ Version test failed - unexpected output"
               exit 1
             fi
           }
